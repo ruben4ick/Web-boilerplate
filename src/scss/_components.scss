@@ -1,0 +1,325 @@
+@use 'variables' as *;
+
+.search-input {
+  padding: 10px;
+  border: 1px solid $color-border-light;
+  border-radius: 0;
+  width: 250px;
+}
+
+.search-btn, 
+.add-teacher-btn {
+  padding: 10px 20px;
+  background-color: $color-surface;
+  color: $color-brand-orange;
+  border: 1.5px solid $color-brand-orange;
+  border-radius: 0;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s, color 0.3s;
+  
+  &:hover {
+    background-color: $color-brand-orange;
+    color: white;
+  }
+}
+
+
+.nav-link, 
+.footer-link {
+  padding: 10px;
+  color: $color-brand-orange;
+  font-weight: bold;
+  transition: color 0.3s;
+
+  &:hover {
+    color: $color-brand-orange-hover;
+  }
+}
+
+.nav-link {
+  &.active {
+    color: $color-brand-orange;
+    border-bottom: none;
+  }
+}
+
+.filters {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding: 10px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  & + .filter-group {
+    padding-left: 24px;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 24px;
+      border-left: 1px dashed $color-text-secondary;
+    }
+  }
+
+  label {
+    font-weight: normal;
+    color: $color-text-secondary;
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 5px;
+    cursor: pointer;
+  }
+}
+
+.filter-select {
+  padding: 8px;
+  border: 1px solid $color-border-light;
+  border-radius: 4px;
+  font-size: 16px;
+  width: auto;
+  box-sizing: border-box;
+}
+
+.teachers-grid, 
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 40px 20px;
+}
+
+.teacher-card {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  cursor: pointer;
+
+  .teacher-avatar {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 16px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid $color-brand-orange;
+    }
+  }
+
+  .initial-avatar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid $color-brand-orange;
+    background-color: transparent;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+
+    .initials {
+      font-size: 40px;
+      font-weight: bold;
+      color: $color-brand-orange;
+    }
+  }
+
+  .star-badge {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    font-size: 30px;
+    color: $color-star-gold;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+    z-index: 1;
+  }
+
+  .teacher-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: $color-text-primary;
+    margin-bottom: 8px;
+    max-width: 150px;
+    line-height: 1.2;
+  }
+
+  .teacher-subject {
+    font-size: 15px;
+    color: $color-text-secondary;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .teacher-location {
+    font-size: 13px;
+    color: $color-text-primary;
+    opacity: 0.8;
+  }
+
+  &:hover {
+    .teacher-avatar img,
+    .initial-avatar {
+      border-color: $color-brand-orange-hover;
+    }
+
+    .initials {
+      color: $color-brand-orange-hover;
+    }
+  }
+}
+
+.stats-table-container {
+  overflow-x: auto;
+  border-radius: $border-radius-default;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background-color: $color-surface;
+
+  th, td {
+    padding: 16px;
+    border: none;
+    text-align: center;
+  }
+
+  thead {
+    border-bottom: 1px solid $color-border-light;
+
+    th {
+      font-weight: bold;
+      color: $color-text-secondary;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.3s;
+
+      &::after {
+        content: '↓';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 16px;
+      }
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        border-bottom: 2px solid $color-text-primary;
+
+        &::after {
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  tbody tr:nth-child(even) {
+      background-color: $color-table-row-accent;
+    }
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+
+  .page-number, 
+  .page-dots {
+    background-color: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: $color-pagination-inactive;
+  }
+
+  .page-number.active, 
+  .page-dots {
+    color: $color-text-primary;
+  }
+}
+
+
+.favorites-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+}
+
+.favorites-grid {
+  flex-grow: 1;
+  overflow-x: auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 1fr);
+  gap: 20px;
+  padding: 10px;
+}
+
+.carousel-btn {
+  background: transparent;
+  border: none;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  position: absolute;
+  z-index: 10;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-top: 3px solid $color-text-secondary;
+    border-left: 3px solid $color-text-secondary;
+    transition: border-color 0.3s;
+  }
+
+  &:hover::before {
+    border-color: $color-brand-orange;
+  }
+
+  &.prev-btn {
+    left: 0;
+    &::before {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
+  }
+
+  &.next-btn {
+    right: 0;
+    &::before {
+      transform: translate(-50%, -50%) rotate(135deg);
+    }
+  }
+}

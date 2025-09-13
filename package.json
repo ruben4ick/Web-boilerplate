@@ -3,6 +3,7 @@
   "description": "",
   "main": "./src/index.js",
   "scripts": {
+    "dev": "webpack-dev-server --mode development",
     "start": "node express.js",
     "build": "rm -f build && cross-env NODE_ENV=production webpack --progress",
     "lint": "eslint src/js",

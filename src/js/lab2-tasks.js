@@ -45,7 +45,8 @@ function formatRandomUser(user) {
     favorite: Math.random() > 0.5,
     course: getRandomCourse(),
     bg_color: getRandomBgColor(),
-    note: Math.random() > 0.7 ? `Note for ${user.name.first}` : null,
+    note: `Note for ${user.name.first}`,
+    // note: Math.random() > 0.7 ? `Note for ${user.name.first}` : null,
   };
 }
 
@@ -121,10 +122,8 @@ export function validateUser(user) {
 
   const stringFields = ['full_name', 'gender', 'note', 'state', 'city', 'country'];
   stringFields.forEach((field) => {
-    if (user[field] !== null && user[field] !== undefined) {
-      if (!isValidStringFormat(user[field])) {
-        errors.push(`${field} should be a string starting with a capital letter`);
-      }
+    if (!isValidStringFormat(user[field])) {
+      errors.push(`${field} should be a string starting with a capital letter`);
     }
   });
 
@@ -167,6 +166,10 @@ export function validateUserArray(users) {
     invalid: invalidCount,
     results,
   };
+}
+
+export function getValidUsers(users) {
+    return users.filter((user) => validateUser(user).isValid);
 }
 
 // Task 3: Simple filtering function
@@ -243,30 +246,6 @@ export function findUser(users, searchBy, searchValue) {
 
     return false;
   }) || null;
-}
-
-export function findAllUsers(users, searchBy, searchValue) {
-  return users.filter((user) => {
-    const userValue = user[searchBy];
-
-    if (userValue == null) {
-      return false;
-    }
-
-    if (typeof userValue === 'string') {
-      return userValue.toLowerCase().includes(searchValue.toString().toLowerCase());
-    }
-
-    if (typeof userValue === 'number') {
-      return userValue === searchValue;
-    }
-
-    if (typeof userValue === 'boolean') {
-      return userValue === searchValue;
-    }
-
-    return false;
-  });
 }
 
 // Task 6

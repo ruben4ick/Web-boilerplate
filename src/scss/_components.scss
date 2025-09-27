@@ -128,6 +128,20 @@
     }
   }
 
+  .star-badge {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &.favorite {
+      color: $color-star-gold;
+    }
+  }
+
   .initial-avatar {
     display: flex;
     justify-content: center;
@@ -153,6 +167,20 @@
     color: $color-star-gold;
     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
     z-index: 1;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &.favorite {
+      color: $color-star-gold;
+    }
+
+    &:not(.favorite) {
+      color: $color-star-gold;
+    }
   }
 
   .teacher-name {
@@ -213,34 +241,51 @@
       font-weight: bold;
       color: $color-text-secondary;
       position: relative;
-      cursor: pointer;
-      transition: background-color 0.3s;
+      transition: background-color 0.3s, color 0.3s;
+      user-select: none;
 
-      &::after {
-        content: '↓';
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        opacity: 0;
-        transition: opacity 0.3s;
-        font-size: 16px;
-      }
-
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.05);
-        border-bottom: 2px solid $color-text-primary;
+      // Apply these styles only to headers that are sortable
+      &[data-sort-by] {
+        cursor: pointer;
 
         &::after {
-          opacity: 1;
+          content: '↓';
+          position: absolute;
+          right: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          opacity: 0;
+          transition: opacity 0.3s, transform 0.3s;
+          font-size: 16px;
+        }
+
+        &:hover {
+          background-color: #f0f0f0;
+          border-bottom: 2px solid $color-text-primary;
+        }
+
+        &.sorted-asc,
+        &.sorted-desc {
+          color: $color-text-primary;
+          &::after {
+            opacity: 1;
+          }
+        }
+
+        &.sorted-asc::after {
+          transform: translateY(-50%) rotate(180deg);
+        }
+
+        &.sorted-desc::after {
+          transform: translateY(-50%) rotate(0deg);
         }
       }
     }
   }
 
   tbody tr:nth-child(even) {
-      background-color: $color-table-row-accent;
-    }
+    background-color: $color-table-row-accent;
+  }
 }
 
 .pagination {

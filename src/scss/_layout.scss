@@ -8,13 +8,13 @@
   padding-right: $spacing-container;
 }
 
-.header, 
+.header,
 .navigation {
   padding-top: 16px;
   padding-bottom: 16px;
 }
 
-.main-content > section, 
+.main-content > section,
 .footer {
   padding-top: $spacing-container;
   padding-bottom: $spacing-container;
@@ -52,8 +52,8 @@
   flex-direction: column;
 }
 
-.header, 
-.navigation, 
+.header,
+.navigation,
 .footer {
   display: flex;
   justify-content: space-between;

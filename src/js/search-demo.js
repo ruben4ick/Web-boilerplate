@@ -1,4 +1,4 @@
-import { formatAndMergeUserData, findUser, findAllUsers } from './lab2-tasks.js';
+import { formatAndMergeUserData, findUser } from './lab2-tasks.js';
 
 console.log('Task 5');
 console.log('='.repeat(60));
@@ -54,49 +54,4 @@ if (foundByEmail) {
     console.log('   Not found');
 }
 
-console.log('\n\nExamples of search for all matches:');
-
-console.log('\n7. All users with "Nor" in the name:');
-const allWithNor = findAllUsers(users, 'full_name', 'Nor');
-console.log(`   Found: ${allWithNor.length} users`);
-allWithNor.slice(0, 5).forEach((user, index) => {
-    console.log(`   ${index + 1}. ${user.full_name} (${user.country})`);
-});
-
-console.log('\n8. All users aged 25:');
-const allAge25 = findAllUsers(users, 'age', 25);
-console.log(`   Found: ${allAge25.length} users`);
-allAge25.slice(0, 5).forEach((user, index) => {
-    console.log(`   ${index + 1}. ${user.full_name} (${user.age} years old)`);
-});
-
-console.log('\n9. All favorite users:');
-const allFavorites = findAllUsers(users, 'favorite', true);
-console.log(`   Found: ${allFavorites.length} users`);
-allFavorites.slice(0, 5).forEach((user, index) => {
-    console.log(`   ${index + 1}. ${user.full_name} (favorite: ${user.favorite})`);
-});
-
-console.log('\n10. All users from Germany:');
-const allFromGermany = findAllUsers(users, 'country', 'Germany');
-console.log(`   Found: ${allFromGermany.length} users`);
-allFromGermany.slice(0, 5).forEach((user, index) => {
-    console.log(`   ${index + 1}. ${user.full_name} (${user.country})`);
-});
-
-console.log('\n11. All female users:');
-const allFemales = findAllUsers(users, 'gender', 'Female');
-console.log(`   Found: ${allFemales.length} users`);
-allFemales.slice(0, 5).forEach((user, index) => {
-    console.log(`   ${index + 1}. ${user.full_name} (${user.gender})`);
-});
-
-console.log('\n12. All users with notes:');
-const allWithNotes = findAllUsers(users, 'note', 'Note');
-console.log(`   Found: ${allWithNotes.length} users`);
-allWithNotes.slice(0, 5).forEach((user, index) => {
-    console.log(`   ${index + 1}. ${user.full_name} (${user.country}) - ${user.note}`);
-});
-
-console.log('\nDemonstration completed!');
 console.log('='.repeat(50));

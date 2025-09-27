@@ -1,27 +1,26 @@
-const path = require("path");
-const webpack = require("webpack");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const OptimizeCssAssetsPlugin = require("optimize-css-assets-webpack-plugin");
-const HtmlReplaceWebpackPlugin = require("html-replace-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const ImageminPlugin = require("imagemin-webpack-plugin").default;
-const MinifyPlugin = require("babel-minify-webpack-plugin");
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const HtmlReplaceWebpackPlugin = require('html-replace-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const ImageminPlugin = require('imagemin-webpack-plugin').default;
+const MinifyPlugin = require('babel-minify-webpack-plugin');
 
-const devMode = process.env.NODE_ENV !== "production";
+const devMode = process.env.NODE_ENV !== 'production';
 
 const CONFIG = {
-  entry: "./src/js/app.js",
+  entry: './src/js/app.js',
   mode: process.env.NODE_ENV,
-  devtool: "cheap-module-source-map",
+  devtool: 'cheap-module-source-map',
   output: {
-    path: path.resolve(__dirname, "./build"),
-    filename: "app.js",
+    path: path.resolve(__dirname, './build'),
+    filename: 'app.js',
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: "./src/index.html",
-      filename: "./index.html",
+      template: './src/index.html',
+      filename: './index.html',
       minify: {
         collapseWhitespace: true,
         minifyCSS: true,
@@ -32,29 +31,29 @@ const CONFIG = {
       {
         pattern:
           '<script type="text/javascript" src="../build/app.js"></script>',
-        replacement: "",
+        replacement: '',
       },
       {
         pattern: '<link rel="stylesheet" href="./css/app.css">',
-        replacement: "",
+        replacement: '',
       },
     ]),
     new MiniCssExtractPlugin({
-      filename: devMode ? "[name].css" : "[name].[hash].css",
-      chunkFilename: devMode ? "[id].css" : "[id].[hash].css",
+      filename: devMode ? '[name].css' : '[name].[hash].css',
+      chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
     }),
     new OptimizeCssAssetsPlugin({
       cssProcessorOptions: { discardComments: { removeAll: true } },
     }),
     new CopyWebpackPlugin([
       {
-        from: "src/images/",
-        to: "images/",
+        from: 'src/images/',
+        to: 'images/',
       },
       {
-        from: "src/*.txt",
-        to: "./[name].[ext]",
-        toType: "template",
+        from: 'src/*.txt',
+        to: './[name].[ext]',
+        toType: 'template',
       },
     ]),
     new ImageminPlugin({
@@ -71,44 +70,28 @@ const CONFIG = {
       {
         test: /\.(css|scss)$/i,
         use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-            // options: {
-            //   hmr: devMode,
-            // },
-          },
-          {
-            loader: "css-loader",
-            options: {
-              sourceMap: true,
-              importLoaders: 2,
-            },
-          },
-          {
-            loader: "postcss-loader",
-            options: {
-              sourceMap: true,
-            },
-          },
-          {
-            loader: "sass-loader",
-            options: { sourceMap: true },
-          },
+          { loader: MiniCssExtractPlugin.loader },
+          { loader: 'css-loader', options: { sourceMap: true, importLoaders: 2 } },
+          { loader: 'postcss-loader', options: { sourceMap: true } },
+          { loader: 'sass-loader', options: { sourceMap: true } },
         ],
       },
       {
         test: /\.(png|jpg|gif)$/,
-        use: [
-          {
-            loader: "file-loader",
-            options: {},
-          },
-        ],
+        use: [{ loader: 'file-loader' }],
+      },
+      {
+        test: /\.js$/, // <── ось це
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: { presets: ['@babel/preset-env'] },
+        },
       },
     ],
   },
   devServer: {
-    contentBase: path.join(__dirname, "src"),
+    contentBase: path.join(__dirname, 'src'),
     compress: true,
     port: 3001,
     hot: true,
@@ -118,14 +101,14 @@ const CONFIG = {
 };
 
 if (!devMode) {
-  CONFIG.output.publicPath = "./";
-  CONFIG.output.filename = "js/app.js";
+  CONFIG.output.publicPath = './';
+  CONFIG.output.filename = 'js/app.js';
   CONFIG.plugins.push(new MinifyPlugin());
   CONFIG.module.rules.push({
     test: [/\.js$/],
     exclude: [/node_modules/],
-    loader: "babel-loader",
-    options: { presets: ["env"] },
+    loader: 'babel-loader',
+    options: { presets: ['env'] },
   });
 }
 

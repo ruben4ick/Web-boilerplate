@@ -1,4 +1,4 @@
-import { randomUserMock, additionalUsers } from './FE4U-Lab2-mock.js';
+import { additionalUsers, randomUserMock } from './FE4U-Lab2-mock.js';
 
 const COURSES = [
   'Mathematics', 'Physics', 'English', 'Computer Science',
@@ -10,18 +10,18 @@ function getRandomCourse() {
   return COURSES[Math.floor(Math.random() * COURSES.length)];
 }
 
-function getRandomBgColor() {
+export function getRandomBgColor() {
   const colors = ['#1f75cb', '#dface7', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-function generateId() {
+export function generateId() {
   return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
 }
 
 function capitalizeFirstLetter(str) {
   if (typeof str !== 'string' || str.length === 0) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1);
+  return str.charAt(0).toLocaleUpperCase() + str.slice(1);
 }
 
 function formatRandomUser(user) {
@@ -120,7 +120,7 @@ function isValidEmailFormat(email) {
 export function validateUser(user) {
   const errors = [];
 
-  const stringFields = ['full_name', 'gender', 'note', 'state', 'city', 'country'];
+  const stringFields = ['full_name', 'gender', 'note', 'city', 'country'];
   stringFields.forEach((field) => {
     if (!isValidStringFormat(user[field])) {
       errors.push(`${field} should be a string starting with a capital letter`);
@@ -169,26 +169,46 @@ export function validateUserArray(users) {
 }
 
 export function getValidUsers(users) {
-    return users.filter((user) => validateUser(user).isValid);
+  return users.filter((user) => validateUser(user).isValid);
 }
 
 // Task 3: Simple filtering function
 export function filterUsers(users, filters = {}) {
+  const {
+    country,
+    age,
+    gender,
+    favorite,
+    hasPhoto,
+    ageRange,
+    searchTerm,
+  } = filters;
+
   return users.filter((user) => {
-    if (filters.country && user.country !== filters.country) {
-      return false;
+    if (country && user.country !== country) return false;
+    if (gender && user.gender !== gender) return false;
+    if (favorite !== undefined && user.favorite !== favorite) return false;
+    if (hasPhoto && !user.picture_large) return false;
+
+    if (age !== undefined && user.age !== age) return false;
+
+    if (ageRange && ageRange !== 'all') {
+      const a = Number(user.age);
+      if (Number.isFinite(a)) {
+        if (ageRange === '18-30' && (a < 18 || a > 30)) return false;
+        if (ageRange === '31-59' && (a < 31 || a > 60)) return false;
+        if (ageRange === '60+' && (a < 61)) return false;
+      } else {
+        return false;
+      }
     }
 
-    if (filters.age !== undefined && user.age !== filters.age) {
-      return false;
-    }
-
-    if (filters.gender && user.gender !== filters.gender) {
-      return false;
-    }
-
-    if (filters.favorite !== undefined && user.favorite !== filters.favorite) {
-      return false;
+    if (typeof searchTerm === 'string' && searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim();
+      const name = (user.full_name || '').toLowerCase();
+      const note = (user.note || '').toLowerCase();
+      const ageStr = String(user.age ?? '');
+      if (!name.includes(q) && !note.includes(q) && !ageStr.includes(q)) return false;
     }
 
     return true;
@@ -259,7 +279,7 @@ export function calculatePercentageMultiple(users, criteria) {
   if (!users || users.length === 0) return 0;
 
   const combinedCriteria = {};
-  criteria.forEach(criterion => {
+  criteria.forEach((criterion) => {
     combinedCriteria[criterion.field] = criterion.value;
   });
 

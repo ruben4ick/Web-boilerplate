@@ -1,0 +1,21 @@
+{
+  "teachers": [
+    {
+      "id": "a55cc3b3-aa27-4e74-aa31-9ce11a15417b",
+      "full_name": "SOeme",
+      "course": "Computer Science",
+      "country": "France",
+      "city": "City",
+      "email": "antonruban03012005@gmail.com",
+      "phone": "0503070195",
+      "b_date": "2001-01-01",
+      "age": 24,
+      "gender": "Male",
+      "note": "Some notes",
+      "favorite": false,
+      "bg_color": "#4ecdc4",
+      "picture_large": null,
+      "picture_thumbnail": null
+    }
+  ]
+}

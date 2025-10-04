@@ -8,7 +8,8 @@
 }
 
 .search-btn,
-.add-teacher-btn {
+.add-teacher-btn,
+.load-more-btn {
   padding: 10px 20px;
   background-color: $color-surface;
   color: $color-brand-orange;
@@ -51,6 +52,11 @@
   padding: 10px;
   align-items: center;
   justify-content: flex-start;
+}
+
+.pagination-controls {
+  text-align: center;
+  margin-top: 40px;
 }
 
 .filter-group {

@@ -1,5 +1,14 @@
 import { additionalUsers, randomUserMock } from './FE4U-Lab2-mock.js';
 
+export async function fetchAndFormatUsers(count = 50) {
+  const url = `https://randomuser.me/api/?results=${count}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const { results } = data;
+  return results.map(formatRandomUser);
+}
+
 const COURSES = [
   'Mathematics', 'Physics', 'English', 'Computer Science',
   'Dancing', 'Chess', 'Biology', 'Chemistry', 'Law',

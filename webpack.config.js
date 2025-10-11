@@ -68,20 +68,46 @@ const CONFIG = {
   module: {
     rules: [
       {
-        test: /\.(css|scss)$/i,
+        test: /\.scss$/i,
         use: [
-          { loader: MiniCssExtractPlugin.loader },
+          MiniCssExtractPlugin.loader,
           { loader: 'css-loader', options: { sourceMap: true, importLoaders: 2 } },
           { loader: 'postcss-loader', options: { sourceMap: true } },
           { loader: 'sass-loader', options: { sourceMap: true } },
         ],
       },
+
       {
-        test: /\.(png|jpg|gif)$/,
-        use: [{ loader: 'file-loader' }],
+        test: /\.css$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          { loader: 'css-loader', options: { sourceMap: true, importLoaders: 1 } },
+          { loader: 'postcss-loader', options: { sourceMap: true } },
+        ],
       },
+
       {
-        test: /\.js$/, // <── ось це
+        test: /\.(png|jpe?g|gif)$/i,
+        use: [
+          {
+            loader: 'file-loader',
+            options: { name: '[name].[hash].[ext]', outputPath: 'images/' },
+          },
+        ],
+      },
+
+      {
+        test: /\.(woff2?|eot|ttf|otf|svg)$/i,
+        use: [
+          {
+            loader: 'file-loader',
+            options: { name: '[name].[hash].[ext]', outputPath: 'fonts/' },
+          },
+        ],
+      },
+
+      {
+        test: /\.js$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',

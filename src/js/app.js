@@ -1,4 +1,15 @@
 import '../scss/style.scss';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import Chart from 'chart.js/auto';
+import _ from 'lodash';
+import dayjs from 'dayjs';
+import '@webdatarocks/webdatarocks/webdatarocks.css';
+import WebDataRocks from '@webdatarocks/webdatarocks';
+
+import markerIconUrl from 'leaflet/dist/images/marker-icon.png';
+import markerRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import {
   fetchAndFormatUsers,
   validateUser,
@@ -10,6 +21,14 @@ import {
   getRandomBgColor,
 } from './lab2-tasks.js';
 
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIconUrl,
+  iconRetinaUrl: markerRetinaUrl,
+  shadowUrl: markerShadowUrl,
+});
+
+let pivotTable = null;
+let coursePieChart = null;
 let currentPage = 1;
 let isLoading = false;
 let lastFetchedCount = 0;
@@ -30,11 +49,45 @@ const favoritesGrid = document.querySelector('.favorites-grid');
 const statsTableBody = document.getElementById('stats-table-body');
 const statsTableHeader = document.getElementById('stats-table-header');
 const loadMoreBtn = document.getElementById('load-more-btn');
+const statsTabs = document.querySelectorAll('.stats-tab');
+const statsViews = document.querySelectorAll('.stats-view');
+const pieCanvas = document.getElementById('statsPieChart');
 
 function capitalize(s) {
   return (typeof s === 'string' && s)
     ? s.charAt(0).toLocaleUpperCase() + s.slice(1)
     : s;
+}
+
+function getCoords(t) {
+  const lat = t?.lat ?? t?.latitude ?? t?.coordinates?.latitude ?? t?.location?.coordinates?.latitude;
+  const lng = t?.lng ?? t?.longitude ?? t?.coordinates?.longitude ?? t?.location?.coordinates?.longitude;
+
+  if (lat == null || lng == null) return null;
+  const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
+  const lngNum = typeof lng === 'string' ? parseFloat(lng) : lng;
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null;
+  return { lat: latNum, lng: lngNum };
+}
+
+function getCourseCounts(list) {
+  const counts = _.countBy(list || [], (t) => t.course || 'N/A');
+  const labels = Object.keys(counts);
+  const data = Object.values(counts);
+  return { labels, data };
+}
+
+function daysUntilBirthday(birthDateStr) {
+  if (!birthDateStr) return null;
+  const today = dayjs().startOf('day');
+  const b = dayjs(birthDateStr);
+  if (!b.isValid()) return null;
+
+  const month = b.month();
+  const date = b.date();
+  let next = dayjs().year(today.year()).month(month).date(date);
+  if (next.isBefore(today)) next = next.add(1, 'year');
+  return next.diff(today, 'day'); // ціла кількість днів
 }
 
 const buildTeacherCard = (t) => {
@@ -57,6 +110,120 @@ const buildTeacherCard = (t) => {
       <p class="teacher-subject">${t.course || 'N/A'}</p>
       <p class="teacher-location">${t.country || ''}</p>
     </div>`;
+};
+
+function displayCoursePie(list) {
+  if (!pieCanvas) return;
+
+  const { labels, data } = getCourseCounts(list);
+  const allZero = data.length === 0 || data.every((v) => v === 0);
+  const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#77DD77', '#836953', '#FFB347'];
+  const backgroundColors = labels.map((_, index) => colors[index % colors.length]);
+  if (allZero) {
+    if (coursePieChart) { coursePieChart.destroy(); coursePieChart = null; }
+    return;
+  }
+
+  if (coursePieChart) coursePieChart.destroy();
+
+  coursePieChart = new Chart(pieCanvas, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{ label: 'Teachers by Subject', data, backgroundColor: backgroundColors }],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+        title: { display: true, text: 'Teachers by Subject' },
+      },
+    },
+  });
+}
+
+const displayPivotTable = (teachers) => {
+  const pivotView = document.getElementById('stats-pivot-view');
+  if (pivotView && !document.getElementById('pivot-controls')) {
+    const controls = document.createElement('div');
+    controls.id = 'pivot-controls';
+    controls.style.display = 'flex';
+    controls.style.gap = '8px';
+    controls.style.margin = '0 0 10px 0';
+    controls.innerHTML = `
+      <button id="btn-pivot-country" class="stats-tab" style="border:none;padding:8px 12px;cursor:pointer;">By Country</button>
+      <button id="btn-pivot-flat" class="stats-tab" style="border:none;padding:8px 12px;cursor:pointer;">Flat (All Teachers)</button>
+    `;
+    pivotView.insertBefore(controls, document.getElementById('pivot-container'));
+  }
+
+  const getPivotFields = () => ([
+    { uniqueName: 'full_name', caption: 'Full Name', type: 'string' },
+    { uniqueName: 'course', caption: 'Specialty', type: 'string' },
+    { uniqueName: 'age', caption: 'Age', type: 'number' },
+    { uniqueName: 'gender', caption: 'Gender', type: 'string' },
+    { uniqueName: 'country', caption: 'Country', type: 'string' },
+    { uniqueName: 'city', caption: 'City', type: 'string' },
+    { uniqueName: 'email', caption: 'Email', type: 'string' },
+    { uniqueName: 'phone', caption: 'Phone', type: 'string' },
+    { uniqueName: 'b_date', caption: 'Birth Date', type: 'string' },
+    { uniqueName: 'id', caption: 'ID', type: 'string' },
+  ]);
+
+  const makeCountryReport = (data) => ({
+    dataSource: { data },
+    fields: getPivotFields(),
+    slice: {
+      rows: [{ uniqueName: 'country', caption: 'Country' }],
+      columns: [{ uniqueName: 'Measures' }],
+      measures: [
+        { uniqueName: 'id', aggregation: 'count', caption: 'Teachers' },
+      ],
+    },
+    options: { grid: { type: 'classic' } },
+  });
+
+  const makeFlatReport = (data) => ({
+    dataSource: { data },
+    fields: getPivotFields(),
+    slice: {
+      rows: [
+        { uniqueName: 'full_name' },
+        { uniqueName: 'course' },
+        { uniqueName: 'age' },
+        { uniqueName: 'gender' },
+        { uniqueName: 'country' },
+        { uniqueName: 'city' },
+        { uniqueName: 'email' },
+        { uniqueName: 'phone' },
+        { uniqueName: 'b_date' },
+      ],
+    },
+    options: {
+      grid: {
+        type: 'flat',
+        showTotals: 'off',
+        showGrandTotals: 'off',
+      },
+    },
+  });
+
+  if (!pivotTable) {
+    pivotTable = new WebDataRocks({
+      container: '#pivot-container',
+      toolbar: true,
+      report: makeCountryReport(teachers),
+    });
+
+    document.getElementById('btn-pivot-country')?.addEventListener('click', () => {
+      pivotTable.setReport(makeCountryReport(allTeachers));
+    });
+    document.getElementById('btn-pivot-flat')?.addEventListener('click', () => {
+      pivotTable.setReport(makeFlatReport(allTeachers));
+    });
+  } else {
+    pivotTable.updateData({ data: teachers });
+  }
 };
 
 const displayTeacherList = (container, teachers) => {
@@ -122,6 +289,10 @@ const displayAllLists = () => {
   const favs = filterUsers(allTeachers, { favorite: true });
   displayTeacherList(favoritesGrid, favs);
   sortAndDisplayStatistics(filtered);
+  const chartActive = document.getElementById('stats-chart-view')?.classList.contains('active');
+  if (chartActive) displayCoursePie(filtered);
+  const pivotActive = document.getElementById('stats-pivot-view')?.classList.contains('active');
+  if (pivotActive) displayPivotTable(allTeachers);
 };
 
 function updateLoadMoreVisibility() {
@@ -243,6 +414,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       sortAndDisplayStatistics();
     });
 
+    document.querySelector('.stats-tabs')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.stats-tab');
+      if (!btn) return;
+
+      const { view } = btn.dataset;
+
+      statsTabs.forEach((b) => b.classList.toggle('active', b === btn));
+
+      statsViews.forEach((v) => v.classList.toggle('active', v.id === `stats-${view}-view`));
+
+      if (view === 'chart') {
+        const list = currentView.length ? currentView : allTeachers;
+        displayCoursePie(list);
+        setTimeout(() => coursePieChart?.resize(), 50);
+      }
+      if (view === 'pivot') {
+        displayPivotTable(allTeachers);
+      }
+    });
+
     addTeacherForm?.addEventListener('submit', (e) => {
       e.preventDefault();
       if (formErrorsContainer) formErrorsContainer.innerHTML = '';
@@ -311,7 +502,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
         .catch((err) => {
           console.error('Failed to save teacher:', err);
-          // eslint-disable-next-line no-unused-expressions
           formErrorsContainer && (formErrorsContainer.innerHTML = '<p>Failed to save teacher. Try again.</p>');
         });
     });
@@ -331,9 +521,40 @@ document.addEventListener('DOMContentLoaded', async () => {
       const popupSubject = teacherInfoPopup.querySelector('.info-subject');
       const popupAgeGender = teacherInfoPopup.querySelector('.info-age-gender');
       const popupLocation = teacherInfoPopup.querySelector('.info-location');
+      const popupBirthday = teacherInfoPopup.querySelector('.info-birthday');
       const popupEmail = teacherInfoPopup.querySelector('.info-email');
       const popupPhone = teacherInfoPopup.querySelector('.info-phone');
       const popupDescription = teacherInfoPopup.querySelector('.info-description');
+      const mapContainer = document.getElementById('teacherMap');
+      const mapToggle = teacherInfoPopup.querySelector('.info-map-toggle');
+
+      let leafletMap = null;
+      let leafletMarker = null;
+
+      function showMap({ lat, lng }, label) {
+        if (!mapContainer) return;
+        mapContainer.hidden = false;
+
+        if (!leafletMap) {
+          leafletMap = L.map(mapContainer, { zoomControl: true }).setView([lat, lng], 12);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(leafletMap);
+        } else {
+          leafletMap.setView([lat, lng], 12);
+        }
+
+        if (leafletMarker) leafletMap.removeLayer(leafletMarker);
+        leafletMarker = L.marker([lat, lng]).addTo(leafletMap);
+        if (label) leafletMarker.bindPopup(label);
+
+        setTimeout(() => leafletMap.invalidateSize(), 0);
+      }
+
+      function hideMap() {
+        if (mapContainer) mapContainer.hidden = true;
+      }
 
       const updatePopupStar = (isFav) => {
         if (!popupStar) return;
@@ -359,6 +580,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         popupName.textContent = t.full_name || '';
         popupSubject.textContent = t.course || 'N/A';
         popupAgeGender.textContent = `${t.age ?? ''}, ${t.gender || ''}`;
+        const daysLeft = daysUntilBirthday(t.b_date);
+
+        if (daysLeft === 0) {
+          popupBirthday.textContent = 'It’s their birthday today!';
+        } else {
+          popupBirthday.textContent = `Days until birthday: ${daysLeft}`;
+        }
         popupLocation.textContent = [t.city, t.country].filter(Boolean).join(', ');
         popupEmail.href = t.email ? `mailto:${t.email}` : '#';
         popupEmail.textContent = t.email || '';
@@ -371,11 +599,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       popupStar?.addEventListener('click', () => {
         const id = teacherInfoPopup.dataset.currentTeacherId;
-        const t = findUser(allTeachers, 'id', id); // findUser з lab2-tasks.js
+        const t = findUser(allTeachers, 'id', id);
         if (!t) return;
         t.favorite = !t.favorite;
         updatePopupStar(t.favorite);
         displayAllLists();
+      });
+
+      mapToggle?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!mapContainer) return;
+
+        const isHidden = mapContainer.hidden;
+        if (isHidden) {
+          const id = teacherInfoPopup.dataset.currentTeacherId;
+          const t = findUser(allTeachers, 'id', id);
+          const coords = getCoords(t);
+          if (!coords) return;
+
+          const label = [t.full_name, [t.city, t.country].filter(Boolean).join(', ')]
+            .filter(Boolean).join(' — ');
+
+          showMap(coords, label);
+          mapToggle.textContent = 'hide map';
+          mapToggle.setAttribute('aria-expanded', 'true');
+        } else {
+          hideMap();
+          mapToggle.textContent = 'toggle map';
+          mapToggle.setAttribute('aria-expanded', 'false');
+        }
       });
 
       const closeInfo = () => teacherInfoPopup.classList.remove('popup--visible');

@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { additionalUsers, randomUserMock } from './FE4U-Lab2-mock.js';
 
 export async function fetchAndFormatUsers(count = 50) {
@@ -84,140 +85,82 @@ function formatAdditionalUser(user) {
   };
 }
 
-function areUsersDuplicates(user1, user2) {
-  return user1.email === user2.email && user1.full_name === user2.full_name;
-}
-
 export function formatAndMergeUserData() {
-  const formattedRandomUsers = randomUserMock.map(formatRandomUser);
-
-  const formattedAdditionalUsers = additionalUsers.map(formatAdditionalUser);
-
-  const allUsers = [...formattedRandomUsers, ...formattedAdditionalUsers];
-
-  const uniqueUsers = [];
-  allUsers.forEach((user) => {
-    const isDuplicate = uniqueUsers.some((existingUser) => areUsersDuplicates(user, existingUser));
-    if (!isDuplicate) {
-      uniqueUsers.push(user);
-    }
-  });
-
-  return uniqueUsers;
+  const formatted = [
+    ..._.map(randomUserMock, formatRandomUser),
+    ..._.map(additionalUsers, formatAdditionalUser),
+  ];
+  return _.uniqBy(formatted, (u) => `${u.email}|${u.full_name}`);
 }
 
 // Task 2
-function isValidStringFormat(str) {
-  return typeof str === 'string' && str.length > 0 && str[0] === str[0].toUpperCase();
-}
-
-function isValidNumber(value) {
-  return typeof value === 'number';
-}
-
-function isValidPhoneFormat(phone) {
-  if (typeof phone !== 'string') return false;
-  const phoneRegex = /^[\d\s\-()+.]+$/;
-  return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 7;
-}
-
-function isValidEmailFormat(email) {
-  if (typeof email !== 'string') return false;
-  return email.includes('@') && email.length > 3;
-}
+const isValidPhoneFormat = (phone) => {
+  if (!_.isString(phone)) return false;
+  const digits = phone.replace(/\D/g, '');
+  return /^[\d\s\-()+.]+$/.test(phone) && digits.length >= 7;
+};
+const isValidEmailFormat = (email) => _.isString(email) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidCapitalized = (s) => _.isString(s) && s.length > 0 && s[0] === s[0].toUpperCase();
 
 export function validateUser(user) {
   const errors = [];
 
-  const stringFields = ['full_name', 'gender', 'note', 'city', 'country'];
-  stringFields.forEach((field) => {
-    if (!isValidStringFormat(user[field])) {
-      errors.push(`${field} should be a string starting with a capital letter`);
+  ['full_name', 'gender', 'city', 'country'].forEach((f) => {
+    if (!isValidCapitalized(user[f] ?? '')) {
+      errors.push(`${f} should be a string starting with a capital letter`);
     }
   });
-
-  if (user.age !== null && user.age !== undefined) {
-    if (!isValidNumber(user.age)) {
-      errors.push('age should be a numeric value');
-    }
+  if (user.note != null && !isValidCapitalized(user.note)) {
+    errors.push('note should be a string starting with a capital letter');
   }
 
-  if (user.phone !== null && user.phone !== undefined) {
-    if (!isValidPhoneFormat(user.phone)) {
-      errors.push('phone should match the required format');
-    }
-  }
+  if (user.age != null && !_.isNumber(user.age)) errors.push('age should be a numeric value');
+  if (user.phone != null && !isValidPhoneFormat(user.phone)) errors.push('phone should match the required format');
+  if (user.email != null && !isValidEmailFormat(user.email)) errors.push('email should contain @ symbol and be valid');
 
-  if (user.email !== null && user.email !== undefined) {
-    if (!isValidEmailFormat(user.email)) {
-      errors.push('email should contain @ symbol and be valid');
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
+  return { isValid: errors.length === 0, errors };
 }
 
 export function validateUserArray(users) {
-  const results = users.map((user) => ({
-    user,
-    validation: validateUser(user),
-  }));
-
-  const validCount = results.filter((result) => result.validation.isValid).length;
-  const invalidCount = results.length - validCount;
-
+  const results = _.map(users, (u) => ({ user: u, validation: validateUser(u) }));
+  const valid = _.sumBy(results, (r) => (r.validation.isValid ? 1 : 0));
   return {
-    total: users.length,
-    valid: validCount,
-    invalid: invalidCount,
-    results,
+    total: users.length, valid, invalid: users.length - valid, results,
   };
 }
 
 export function getValidUsers(users) {
-  return users.filter((user) => validateUser(user).isValid);
+  return _.filter(users, (u) => validateUser(u).isValid);
 }
 
 // Task 3: Simple filtering function
 export function filterUsers(users, filters = {}) {
   const {
-    country,
-    age,
-    gender,
-    favorite,
-    hasPhoto,
-    ageRange,
-    searchTerm,
+    country, age, gender, favorite, hasPhoto, ageRange, searchTerm,
   } = filters;
 
-  return users.filter((user) => {
-    if (country && user.country !== country) return false;
-    if (gender && user.gender !== gender) return false;
-    if (favorite !== undefined && user.favorite !== favorite) return false;
-    if (hasPhoto && !user.picture_large) return false;
+  return _.filter(users, (u) => {
+    if (country && u.country !== country) return false;
+    if (gender && u.gender !== gender) return false;
+    if (!_.isNil(favorite) && u.favorite !== favorite) return false;
+    if (hasPhoto && !u.picture_large) return false;
 
-    if (age !== undefined && user.age !== age) return false;
+    if (!_.isNil(age) && u.age !== age) return false;
 
     if (ageRange && ageRange !== 'all') {
-      const a = Number(user.age);
-      if (Number.isFinite(a)) {
-        if (ageRange === '18-30' && (a < 18 || a > 30)) return false;
-        if (ageRange === '31-59' && (a < 31 || a > 60)) return false;
-        if (ageRange === '60+' && (a < 61)) return false;
-      } else {
-        return false;
-      }
+      const a = Number(u.age);
+      if (!Number.isFinite(a)) return false;
+      if (ageRange === '18-30' && (a < 18 || a > 30)) return false;
+      if (ageRange === '31-59' && (a < 31 || a > 59)) return false;
+      if (ageRange === '60+' && (a < 60)) return false;
     }
 
-    if (typeof searchTerm === 'string' && searchTerm.trim()) {
-      const q = searchTerm.toLowerCase().trim();
-      const name = (user.full_name || '').toLowerCase();
-      const note = (user.note || '').toLowerCase();
-      const ageStr = String(user.age ?? '');
-      if (!name.includes(q) && !note.includes(q) && !ageStr.includes(q)) return false;
+    if (_.isString(searchTerm) && _.trim(searchTerm)) {
+      const q = _.toLower(_.trim(searchTerm));
+      const hay = [
+        u.full_name, u.note, u.course, u.gender, u.country, u.city, String(u.age ?? ''),
+      ].map((x) => _.toLower(String(x ?? '')));
+      if (!hay.some((s) => s.includes(q))) return false;
     }
 
     return true;
@@ -226,54 +169,22 @@ export function filterUsers(users, filters = {}) {
 
 // Task 4
 export function sortUsers(users, sortBy, order = 'asc') {
-  return [...users].sort((a, b) => {
-    let valueA = a[sortBy];
-    let valueB = b[sortBy];
-
-    if (valueA == null) valueA = '';
-    if (valueB == null) valueB = '';
-
-    if (sortBy === 'b_day') {
-      valueA = new Date(valueA);
-      valueB = new Date(valueB);
-    }
-
-    let result;
-
-    if (valueA < valueB) {
-      result = -1;
-    } else if (valueA > valueB) {
-      result = 1;
-    } else {
-      result = 0;
-    }
-
-    return order === 'desc' ? -result : result;
-  });
+  const iteratee = (o) => {
+    let v = _.get(o, sortBy);
+    if (sortBy === 'b_day') v = new Date(v);
+    if (_.isString(v)) return v.toLowerCase();
+    return v;
+  };
+  return _.orderBy(users, [iteratee], [order]);
 }
 
 // Task 5
 export function findUser(users, searchBy, searchValue) {
-  return users.find((user) => {
-    const userValue = user[searchBy];
-
-    if (userValue == null) {
-      return false;
-    }
-
-    if (typeof userValue === 'string') {
-      return userValue.toLowerCase().includes(searchValue.toString().toLowerCase());
-    }
-
-    if (typeof userValue === 'number') {
-      return userValue === searchValue;
-    }
-
-    if (typeof userValue === 'boolean') {
-      return userValue === searchValue;
-    }
-
-    return false;
+  return _.find(users, (u) => {
+    const v = _.get(u, searchBy);
+    if (_.isNil(v)) return false;
+    if (_.isString(v)) return v.toLowerCase().includes(String(searchValue).toLowerCase());
+    return _.isNumber(v) || _.isBoolean(v) ? v === searchValue : false;
   }) || null;
 }
 
@@ -283,7 +194,6 @@ export function calculatePercentage(users, criteria) {
   const filteredCount = filterUsers(users, criteria).length;
   return Math.round((filteredCount / users.length) * 100);
 }
-
 export function calculatePercentageMultiple(users, criteria) {
   if (!users || users.length === 0) return 0;
 

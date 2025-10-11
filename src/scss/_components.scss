@@ -228,6 +228,49 @@
   border-radius: $border-radius-default;
 }
 
+.stats-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid $color-border-light;
+}
+
+.stats-tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 16px;
+  font-weight: bold;
+  color: $color-text-secondary;
+  transition: all 0.3s;
+
+  &.active {
+    color: $color-brand-orange;
+    border-bottom-color: $color-brand-orange;
+  }
+}
+
+.stats-view {
+  display: none;
+  &.active {
+    display: block;
+  }
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: auto;
+}
+
+#pivot-container {
+  width: 100%;
+  height: 500px;
+}
+
 .stats-table {
   width: 100%;
   border-collapse: collapse;
